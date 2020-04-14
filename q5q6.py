@@ -29,10 +29,18 @@ for image in bad_images:
 
 # code for q6
 
-# here is one example that shows one potential problem of my approach:
+# here is one example that shows the potential problem of duplicate boxes:
 
 I = Image.open("RedLights2011_Medium/RL-001.jpg")
 draw = ImageDraw.Draw(I)
 for box in preds["RL-001.jpg"]:
+    draw.rectangle([box[1], box[0], box[3], box[2]])
+I.show()
+
+# here is one example that shows the potential problem of reflected light and taillight of cars:
+
+I = Image.open("RedLights2011_Medium/RL-129.jpg")
+draw = ImageDraw.Draw(I)
+for box in preds["RL-129.jpg"]:
     draw.rectangle([box[1], box[0], box[3], box[2]])
 I.show()
