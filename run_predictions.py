@@ -34,7 +34,7 @@ def detect_red_light(I):
     kernel4 = np.asarray(kernel4)
     kernel5 = Image.open("kernel5.jpg")
     kernel5 = np.asarray(kernel5)
-    kernels = [kernel1, kernel3, kernel4, kernel5]
+    kernels = [kernel1, kernel2, kernel3, kernel4, kernel5]
     for kernel in kernels:
         box_height = kernel.shape[0]
         box_width = kernel.shape[1]
@@ -76,7 +76,8 @@ file_names = [f for f in file_names if '.jpg' in f]
 
 preds = {}
 
-for i in range(333, len(file_names)):
+for i in range(0, len(file_names)):
+    print(i)
     # read image using PIL:
     I = Image.open(os.path.join(data_path, file_names[i]))
 
@@ -84,13 +85,7 @@ for i in range(333, len(file_names)):
     I = np.asarray(I)
 
     preds[file_names[i]] = detect_red_light(I)
-    im = Image.open(os.path.join(data_path, file_names[i]))
-    draw = ImageDraw.Draw(im)
-    for box in preds[file_names[i]]:
-        draw.rectangle([box[1], box[0], box[3], box[2]])
-    im.show()
-    print(preds[file_names[i]])
-    break
+
 # save preds (overwrites any previous predictions!)
 with open(os.path.join(preds_path, 'preds.json'), 'w') as f:
     json.dump(preds, f)
