@@ -1,7 +1,8 @@
 import os
 import numpy as np
 import json
-from PIL import Image
+from PIL import Image, ImageDraw
+
 
 def detect_red_light(I):
     '''
@@ -17,67 +18,79 @@ def detect_red_light(I):
     I[:,:,1] is the green channel
     I[:,:,2] is the blue channel
     '''
-    
-    
-    bounding_boxes = [] # This should be a list of lists, each of length 4. See format example below. 
-    
+
+    bounding_boxes = []  # This should be a list of lists, each of length 4. See format example below.
+
     '''
     BEGIN YOUR CODE
     '''
-    
-    '''
-    As an example, here's code that generates between 1 and 5 random boxes
-    of fixed size and returns the results in the proper format.
-    '''
-    
-    box_height = 8
-    box_width = 6
-    
-    num_boxes = np.random.randint(1,5) 
-    
-    for i in range(num_boxes):
-        (n_rows,n_cols,n_channels) = np.shape(I)
-        
-        tl_row = np.random.randint(n_rows - box_height)
-        tl_col = np.random.randint(n_cols - box_width)
-        br_row = tl_row + box_height
-        br_col = tl_col + box_width
-        
-        bounding_boxes.append([tl_row,tl_col,br_row,br_col]) 
-    
+    kernel1 = Image.open("kernel1.jpg")
+    kernel1 = np.asarray(kernel1)
+    kernel2 = Image.open("kernel2.jpg")
+    kernel2 = np.asarray(kernel2)
+    kernel3 = Image.open("kernel3.jpg")
+    kernel3 = np.asarray(kernel3)
+    kernel4 = Image.open("kernel4.jpg")
+    kernel4 = np.asarray(kernel4)
+    kernel5 = Image.open("kernel5.jpg")
+    kernel5 = np.asarray(kernel5)
+    kernels = [kernel1, kernel3, kernel4, kernel5]
+    for kernel in kernels:
+        box_height = kernel.shape[0]
+        box_width = kernel.shape[1]
+        img_height = I.shape[0]
+        img_width = I.shape[1]
+        kernel_vector = np.reshape(kernel, box_width * box_height * 3) / 127.5 - 1
+        for h in range(0, img_height - box_height, 1):
+            for w in range(0, img_width - box_width, 1):
+                cur_box = I[h:h + box_height, w:w + box_width, :] / 127.5 - 1
+                cur_box = np.reshape(cur_box, box_width * box_height * 3)
+                # arc cosine between two vectors
+                value = np.dot(cur_box, kernel_vector) / (np.linalg.norm(cur_box) * np.linalg.norm(kernel_vector))
+                # if the value larger than a threshold
+                if value > 0.93:
+                    bounding_boxes.append([h, w, h + box_height, w + box_width])
+
     '''
     END YOUR CODE
     '''
-    
+
     for i in range(len(bounding_boxes)):
         assert len(bounding_boxes[i]) == 4
-    
+
     return bounding_boxes
 
-# set the path to the downloaded data: 
-data_path = '../data/RedLights2011_Medium'
+
+# set the path to the downloaded data:
+data_path = 'RedLights2011_Medium'
 
 # set a path for saving predictions: 
-preds_path = '../data/hw01_preds' 
-os.makedirs(preds_path,exist_ok=True) # create directory if needed 
+preds_path = 'hw01_preds'
+os.makedirs(preds_path, exist_ok=True)  # create directory if needed
 
 # get sorted list of files: 
-file_names = sorted(os.listdir(data_path)) 
+file_names = sorted(os.listdir(data_path))
 
 # remove any non-JPEG files: 
-file_names = [f for f in file_names if '.jpg' in f] 
+file_names = [f for f in file_names if '.jpg' in f]
 
 preds = {}
-for i in range(len(file_names)):
-    
+
+for i in range(333, len(file_names)):
     # read image using PIL:
-    I = Image.open(os.path.join(data_path,file_names[i]))
-    
+    I = Image.open(os.path.join(data_path, file_names[i]))
+
     # convert to numpy array:
     I = np.asarray(I)
-    
-    preds[file_names[i]] = detect_red_light(I)
 
+    preds[file_names[i]] = detect_red_light(I)
+    im = Image.open(os.path.join(data_path, file_names[i]))
+    draw = ImageDraw.Draw(im)
+    for box in preds[file_names[i]]:
+        draw.rectangle([box[1], box[0], box[3], box[2]])
+    im.show()
+    print(preds[file_names[i]])
+    break
 # save preds (overwrites any previous predictions!)
-with open(os.path.join(preds_path,'preds.json'),'w') as f:
-    json.dump(preds,f)
+with open(os.path.join(preds_path, 'preds.json'), 'w') as f:
+    json.dump(preds, f)
